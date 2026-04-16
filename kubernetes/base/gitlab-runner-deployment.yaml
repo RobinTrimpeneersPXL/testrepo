@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitlab-runner
+  labels:
+    app: gitlab-runner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitlab-runner
+  template:
+    metadata:
+      labels:
+        app: gitlab-runner
+    spec:
+      containers:
+      - name: runner
+        image: gitlab/gitlab-runner:latest
+        env:
+        - name: GITLAB_URL
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-secrets
+              key: GITLAB_URL
+        - name: REGISTRATION_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-secrets
+              key: GITLAB_REGISTRATION_TOKEN
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            gitlab-runner register \
+              --non-interactive \
+              --url "${GITLAB_URL}" \
+              --registration-token "${REGISTRATION_TOKEN}" \
+              --executor "kubernetes" \
+              --kubernetes-image "alpine:latest" \
+              --name "stress-test-runner" \
+              --tag-list "stress-test"
+            gitlab-runner run
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "2Gi"

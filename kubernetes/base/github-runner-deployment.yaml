@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: github-runner
+  labels:
+    app: github-runner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: github-runner
+  template:
+    metadata:
+      labels:
+        app: github-runner
+    spec:
+      containers:
+      - name: runner
+        image: ghcr.io/actions/actions-runner:latest
+        env:
+        - name: REPO_URL
+          valueFrom:
+            secretKeyRef:
+              name: github-secrets
+              key: GITHUB_REPO_URL
+        - name: RUNNER_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: github-secrets
+              key: GITHUB_RUNNER_TOKEN
+        # Standard actions-runner image expects ./config.sh and ./run.sh
+        # This setup assumes the image handles registration via these env vars.
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "2Gi"

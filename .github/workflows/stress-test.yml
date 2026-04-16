@@ -1,0 +1,23 @@
+name: CI Stress Test
+
+on: [push, workflow_dispatch]
+
+jobs:
+  stress-build:
+    runs-on: self-hosted
+    strategy:
+      matrix:
+        build-id: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Kaniko Build
+        uses: aevea/action-kaniko@master
+        with:
+          image: my-stress-image
+          tag: ${{ matrix.build-id }}
+          cache: false
+          push: false
+          build_file: Dockerfile
+          context: .

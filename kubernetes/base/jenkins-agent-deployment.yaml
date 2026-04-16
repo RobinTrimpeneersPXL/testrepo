@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins-agent
+  labels:
+    app: jenkins-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jenkins-agent
+  template:
+    metadata:
+      labels:
+        app: jenkins-agent
+    spec:
+      containers:
+      - name: agent
+        image: jenkins/inbound-agent:latest
+        env:
+        - name: JENKINS_URL
+          valueFrom:
+            secretKeyRef:
+              name: jenkins-secrets
+              key: JENKINS_URL
+        - name: JENKINS_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: jenkins-secrets
+              key: JENKINS_SECRET
+        - name: JENKINS_AGENT_NAME
+          valueFrom:
+            secretKeyRef:
+              name: jenkins-secrets
+              key: JENKINS_AGENT_NAME
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "2Gi"
