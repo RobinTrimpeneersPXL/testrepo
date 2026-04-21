@@ -18,6 +18,7 @@ jobs:
           image: my-stress-image
           tag: ${{ matrix.build-id }}
           cache: false
-          push: false
+          path: .
           build_file: Dockerfile
-          context: .
+          extra_args: "--no-push"
+          password: "dummy-not-needed-for-no-push"
