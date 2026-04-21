@@ -1,10 +1,12 @@
-stress_test_build:
+# Demonstrating scaling efficiency with 10 parallel jobs
+scaling_test:
   stage: build
+  image: alpine:latest
   tags:
     - stress-test
-  image:
-    name: gcr.io/kaniko-project/executor:debug
-    entrypoint: [""]
-  parallel: 10
+  parallel: 25
   script:
-    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --no-push
+    - echo "Scaling Test - Job $CI_NODE_INDEX of $CI_NODE_TOTAL"
+    - echo "System info:"
+    - uname -a
+    - sleep 30

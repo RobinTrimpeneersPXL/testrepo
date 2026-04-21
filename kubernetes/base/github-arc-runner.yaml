@@ -1,0 +1,46 @@
+apiVersion: actions.summerwind.dev/v1alpha1
+kind: RunnerDeployment
+metadata:
+  name: github-runner-deployment
+  namespace: actions-runner-system
+spec:
+  template:
+    spec:
+      repository: RobinTrimpeneersPXL/testrepo
+      labels:
+        - self-hosted
+      # Use ClusterFirst and add host-record for github if DNS is still broken
+      dnsPolicy: "ClusterFirst"
+      containers:
+      - name: runner
+        image: summerwind/actions-runner:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: DOCKER_HOST
+          value: unix:///var/run/docker.sock
+        volumeMounts:
+        - name: docker-socket
+          mountPath: /var/run/docker.sock
+      securityContext:
+        fsGroup: 1000
+      volumes:
+      - name: docker-socket
+        hostPath:
+          path: /var/run/docker.sock
+          type: Socket
+---
+apiVersion: actions.summerwind.dev/v1alpha1
+kind: HorizontalRunnerAutoscaler
+metadata:
+  name: github-runner-autoscaler
+  namespace: actions-runner-system
+spec:
+  scaleTargetRef:
+    name: github-runner-deployment
+  minReplicas: 0
+  maxReplicas: 50
+  # Best metric for 'Scale on Demand' from 0 pods
+  metrics:
+  - type: TotalNumberOfQueuedAndInProgressWorkflowRuns
+    repositoryNames:
+    - RobinTrimpeneersPXL/testrepo

@@ -4,3 +4,4 @@ resources:
   - jenkins-agent-deployment.yaml
   - github-runner-deployment.yaml
   - gitlab-runner-deployment.yaml
+  - gitlab-runner-rbac.yaml

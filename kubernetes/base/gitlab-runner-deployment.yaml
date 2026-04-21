@@ -14,9 +14,11 @@ spec:
       labels:
         app: gitlab-runner
     spec:
+      serviceAccountName: gitlab-runner
       containers:
       - name: runner
-        image: gitlab/gitlab-runner:latest
+        image: docker.io/gitlab/gitlab-runner:latest
+        imagePullPolicy: IfNotPresent
         env:
         - name: GITLAB_URL
           valueFrom:
@@ -28,6 +30,58 @@ spec:
             secretKeyRef:
               name: gitlab-secrets
               key: GITLAB_REGISTRATION_TOKEN
+        - name: RUNNER_CONCURRENT
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-secrets
+              key: GITLAB_RUNNER_CONCURRENT
+        - name: CHECK_INTERVAL
+          value: "1"
+        - name: REGISTER_NON_INTERACTIVE
+          value: "true"
+        - name: RUNNER_EXECUTOR
+          value: "kubernetes"
+        - name: KUBERNETES_IMAGE
+          value: "alpine:latest"
+        - name: RUNNER_NAME
+          value: "stress-test-runner"
+        - name: RUNNER_TAG_LIST
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-secrets
+              key: GITLAB_RUNNER_TAG_LIST
+        - name: KUBERNETES_NAMESPACE
+          value: "default"
+        - name: KUBERNETES_CPU_REQUEST
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-secrets
+              key: GITLAB_JOB_CPU_REQUEST
+        - name: KUBERNETES_CPU_LIMIT
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-secrets
+              key: GITLAB_JOB_CPU_LIMIT
+        - name: KUBERNETES_MEMORY_REQUEST
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-secrets
+              key: GITLAB_JOB_MEMORY_REQUEST
+        - name: KUBERNETES_MEMORY_LIMIT
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-secrets
+              key: GITLAB_JOB_MEMORY_LIMIT
+        - name: KUBERNETES_HELPER_CPU_REQUEST
+          value: "100m"
+        - name: KUBERNETES_HELPER_MEMORY_REQUEST
+          value: "128Mi"
+        - name: KUBERNETES_PULL_POLICY
+          value: "if-not-present"
+        - name: KUBERNETES_PRIVILEGED
+          value: "false"
+        - name: FF_NETWORK_PER_BUILD
+          value: "true"
         command: ["/bin/bash", "-c"]
         args:
           - |
@@ -35,10 +89,25 @@ spec:
               --non-interactive \
               --url "${GITLAB_URL}" \
               --registration-token "${REGISTRATION_TOKEN}" \
-              --executor "kubernetes" \
-              --kubernetes-image "alpine:latest" \
-              --name "stress-test-runner" \
-              --tag-list "stress-test"
+              --executor "${RUNNER_EXECUTOR}" \
+              --limit "${RUNNER_CONCURRENT}" \
+              --kubernetes-image "${KUBERNETES_IMAGE}" \
+              --name "${RUNNER_NAME}" \
+              --tag-list "${RUNNER_TAG_LIST}" \
+              --kubernetes-namespace "${KUBERNETES_NAMESPACE}" \
+              --kubernetes-cpu-request "${KUBERNETES_CPU_REQUEST}" \
+              --kubernetes-cpu-limit "${KUBERNETES_CPU_LIMIT}" \
+              --kubernetes-memory-request "${KUBERNETES_MEMORY_REQUEST}" \
+              --kubernetes-memory-limit "${KUBERNETES_MEMORY_LIMIT}" \
+              --kubernetes-helper-cpu-request "${KUBERNETES_HELPER_CPU_REQUEST}" \
+              --kubernetes-helper-memory-request "${KUBERNETES_HELPER_MEMORY_REQUEST}" \
+              --kubernetes-pull-policy "${KUBERNETES_PULL_POLICY}" \
+              --kubernetes-privileged "${KUBERNETES_PRIVILEGED}"
+            
+            # Ensure global concurrency matches RUNNER_CONCURRENT
+            sed -i "s/^concurrent = .*/concurrent = ${RUNNER_CONCURRENT}/" /etc/gitlab-runner/config.toml
+            
+            # Start the runner
             gitlab-runner run
         resources:
           requests:

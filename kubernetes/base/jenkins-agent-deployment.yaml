@@ -16,7 +16,8 @@ spec:
     spec:
       containers:
       - name: agent
-        image: jenkins/inbound-agent:latest
+        image: docker.io/jenkins/inbound-agent:latest
+        imagePullPolicy: IfNotPresent
         env:
         - name: JENKINS_URL
           valueFrom:

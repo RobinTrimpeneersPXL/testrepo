@@ -5,7 +5,7 @@ metadata:
   labels:
     app: github-runner
 spec:
-  replicas: 1
+  replicas: 5
   selector:
     matchLabels:
       app: github-runner
@@ -14,9 +14,20 @@ spec:
       labels:
         app: github-runner
     spec:
+      dnsPolicy: "None"
+      dnsConfig:
+        nameservers:
+          - 8.8.8.8
+          - 1.1.1.1
       containers:
       - name: runner
         image: ghcr.io/actions/actions-runner:latest
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            # Use the Pod Name (HOSTNAME) as the runner name to avoid collisions
+            ./config.sh --url "${REPO_URL}" --token "${RUNNER_TOKEN}" --name "${HOSTNAME}" --unattended --replace && ./run.sh
         env:
         - name: REPO_URL
           valueFrom:
@@ -28,8 +39,10 @@ spec:
             secretKeyRef:
               name: github-secrets
               key: GITHUB_RUNNER_TOKEN
+        volumeMounts:
+        - name: docker-socket
+          mountPath: /var/run/docker.sock
         # Standard actions-runner image expects ./config.sh and ./run.sh
-        # This setup assumes the image handles registration via these env vars.
         resources:
           requests:
             cpu: "250m"
@@ -37,3 +50,8 @@ spec:
           limits:
             cpu: "1000m"
             memory: "2Gi"
+      volumes:
+      - name: docker-socket
+        hostPath:
+          path: /var/run/docker.sock
+          type: Socket
