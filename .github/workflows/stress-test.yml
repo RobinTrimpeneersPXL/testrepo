@@ -20,5 +20,5 @@ jobs:
           cache: false
           path: .
           build_file: Dockerfile
-          extra_args: "--no-push"
+          extra_args: "--no-push --cache=false"
           password: "dummy-not-needed-for-no-push"
