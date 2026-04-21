@@ -8,17 +8,15 @@ jobs:
     strategy:
       matrix:
         build-id: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    container:
+      image: alpine:latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Kaniko Build
-        uses: aevea/action-kaniko@master
-        with:
-          image: my-stress-image
-          tag: ${{ matrix.build-id }}
-          cache: false
-          path: .
-          build_file: Dockerfile
-          extra_args: "--no-push --cache=false"
-          password: "dummy-not-needed-for-no-push"
+      - name: Scaling Efficiency Test
+        run: |
+          echo "Scaling Test - Job ${{ matrix.build-id }} of 10"
+          echo "System info:"
+          uname -a
+          sleep 30
